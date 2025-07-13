@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI CCTV PPE Detection</title>
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --text-color: #2c3e50;
+            --bg-light: rgba(255, 255, 255, 0.97);
+            --border-color: #e9ecef;
+            --shadow-light: rgba(0, 0, 0, 0.05);
+            --shadow-dark: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            background: var(--bg-light);
+            border-radius: 20px;
+            padding: 30px 40px;
+            box-shadow: 0 20px 40px var(--shadow-dark);
+        }
+
+        h1 {
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px var(--shadow-light);
+        }
+        
+        h3 {
+            color: #555;
+            margin-top: 40px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .left-column, .right-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: #fff;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px var(--shadow-light);
+            text-align: left;
+        }
+
+        img, video {
+            border: 3px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px var(--shadow-dark);
+            width: 100%;
+            height: auto;
+            background-color: #000;
+        }
+        
+        .video-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            background: transparent;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 16px;
+            box-shadow: inset 0 2px 5px var(--shadow-light);
+            overflow: hidden;
+        }
+
+        #liveFeed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+            border: none;
+            border-radius: 10px;
+            box-shadow: none;
+        }
+
+        .feed-placeholder {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+        }
+
+        button {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--shadow-dark);
+            font-weight: 500;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .controls {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        #statusMessage {
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+            min-width: 200px;
+            text-align: center;
+        }
+        .status-active {
+            color: #28a745;
+            background-color: #e6ffed;
+            border: 1px solid #28a745;
+        }
+        .status-inactive {
+            color: #dc3545;
+            background-color: #ffebee;
+            border: 1px solid #dc3545;
+        }
+        .status-transition {
+            color: #ffc107;
+            background-color: #fff8e1;
+            border: 1px solid #ffc107;
+        }
+
+        .status-active {
+            color: #28a745; /* Green for active */
+            background-color: #d4edda; /* Light green background */
+        }
+
+        .status-inactive {
+            color: #dc3545; /* Red for inactive */
+            background-color: #f8d7d7; /* Light red background */
+        }
+
+        /* --- Stats Section --- */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+        }
+        
+        .stat-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            flex: 1;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* --- Log Box Section --- */
+        #logBox {
+            width: 100%;
+            height: 300px;
+            margin: 0;
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            box-shadow: inset 0 2px 5px var(--shadow-light);
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 10px;
+            border-left: 5px solid;
+            border-radius: 5px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .log-entry.violation { background: #ffebee; border-color: #f44336; color: #c62828; }
+        .log-entry.detection { background: #e3f2fd; border-color: #2196f3; color: #1565c0; }
+        .log-entry.normal { background: #e8f5e8; border-color: #4caf50; color: #2e7d32; }
+
+        .empty-state {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timestamp { font-weight: bold; }
+        .violation-text { font-weight: bold; }
+        
+        /* --- Responsive Design --- */
+        @media (max-width: 992px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>👷 AI CCTV PPE Detection</h1>
+
+    <div class="main-content">
+        <div class="left-column">
+            <div class="card">
+                <h3>📷 Live Camera Feed</h3>
+                <div class="controls">
+                    <button id="startBtn" onclick="startFeed()">▶️ Start Detection</button>
+                    <button id="stopBtn" onclick="stopFeed()">⏹️ Stop Detection</button>
+                </div>
+                <div class="video-container">
+                    <img id="liveFeed" alt="Live Feed" src="">
+                    <div class="feed-placeholder" id="feedPlaceholder">Camera feed will appear here when detection starts</div>
+                </div>
+                <div id="statusMessage" class="status-active">📶 Ready to start detection...</div>
+            </div>
+            
+            <div class="card">
+                <h3>📤 Upload for Detection</h3>
+                <div class="controls">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <input type="file" name="file" accept="image/*,video/*" required style="padding: 10px; margin: 5px; border-radius: 8px; border: 1px solid #ccc; background: #fff;">
+                        <button type="submit">🔍 Process File</button>
+                    </form>
+                </div>
+                <div id="uploadResult" style="margin-top: 15px;">
+                    <img id="uploadedImage" src="" style="max-width: 100%; display: none;" />
+                    <video id="uploadedVideo" controls style="max-width: 100%; display: none;"></video>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="card">
+                <h3>📊 Live Statistics</h3>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalDetections">0</div>
+                        <div class="stat-label">Total Logs</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="violationCount">0</div>
+                        <div class="stat-label">Current Violations</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="personCount">0</div>
+                        <div class="stat-label">People Detected</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📋 Live Detection Log</h3>
+                <div class="controls">
+                    <button onclick="clearLogs()">🗑️ Clear</button>
+                    <button onclick="exportLogs()">💾 Export</button>
+                </div>
+                <div id="logBox">
+                    <div class="empty-state">Detection logs will appear here...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const uploadForm = document.getElementById("uploadForm");
+const uploadedImage = document.getElementById("uploadedImage");
+const uploadedVideo = document.getElementById("uploadedVideo");
+const uploadResult = document.getElementById("uploadResult");
+
+uploadForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(uploadForm);
+    fetch("/upload", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.blob())
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const fileType = formData.get("file").type;
+
+        uploadedImage.style.display = "none";
+        uploadedVideo.style.display = "none";
+
+        if (fileType.startsWith("image")) {
+            uploadedImage.src = url;
+            uploadedImage.style.display = "block";
+        } else if (fileType.startsWith("video")) {
+            uploadedVideo.src = url;
+            uploadedVideo.style.display = "block";
+        }
+    })
+    .catch(err => {
+        console.error("Upload failed:", err);
+        uploadResult.innerHTML = "<p style='color:red;'>❌ Detection failed. Check server logs.</p>";
+    });
+});   
+
+const img = document.getElementById("liveFeed");
+const feedPlaceholder = document.getElementById("feedPlaceholder");
+const status = document.getElementById("statusMessage");
+const logBox = document.getElementById("logBox");
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
+
+let logInterval;
+let isRunning = false;
+let logEntries = [];
+
+function startFeed() {
+    if (isRunning) return;
+    
+    startBtn.disabled = true;
+    status.innerText = "🔄 Starting detection...";
+    status.className = "status-transition"; // Yellow for transition state
+    
+    fetch("/start", { method: "POST" })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to start detection');
+            }
+            return response.json();
+        })
+        .then(data => {
+            img.src = "/video_feed?" + new Date().getTime();
+            img.style.display = "block";
+            feedPlaceholder.style.display = "none";
+            status.innerText = "📡 Live detection active...";
+            status.className = "status-active"; // Set to active class
+            isRunning = true;
+            startBtn.disabled = false;
+            stopBtn.disabled = false;
+            
+            // Start fetching logs immediately and then every 1 second
+            fetchLog();
+            logInterval = setInterval(fetchLog, 1000);
+        })
+        .catch(error => {
+            console.error('Error starting detection:', error);
+            status.innerText = "❌ Failed to start detection";
+            status.className = "status-inactive"; // Set to inactive class
+            startBtn.disabled = false;
+        });
+}
+
+function stopFeed() {
+    if (!isRunning) return;
+    
+    stopBtn.disabled = true;
+    status.innerText = "🔄 Stopping detection...";
+    status.style.color = "#ffc107"; // Yellow for stopping
+    
+    fetch("/stop", { method: "POST" })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to stop detection');
+            }
+            return response.json();
+        })
+        .then(data => {
+            img.src = "";
+            img.style.display = "none";
+            feedPlaceholder.style.display = "block";
+            status.innerText = "🛑 Detection stopped.";
+            status.className = "status-inactive"; // Set to inactive class
+            isRunning = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = false;
+            
+            if (logInterval) {
+                clearInterval(logInterval);
+                logInterval = null;
+            }
+        })
+        .catch(error => {
+            console.error('Error stopping detection:', error);
+            status.innerText = "❌ Failed to stop detection";
+            status.className = "status-inactive"; // Set to inactive class
+            stopBtn.disabled = false;
+        });
+}
+
+function parseLogEntry(logEntry) {
+    // If it's already a parsed object (from the new backend), just return it
+    if (typeof logEntry === 'object' && logEntry !== null) {
+        return {
+            timestamp: logEntry.timestamp,
+            text: logEntry.message,
+            category: logEntry.category,
+            id: Date.now() + Math.random()
+        };
+    }
+    
+    // Fallback for old string format (shouldn't be needed with the new backend)
+    const timestamp = new Date().toLocaleTimeString();
+    let category = 'normal';
+    let processedText = typeof logEntry === 'string' ? logEntry : JSON.stringify(logEntry);
+    
+    // Simple detection for violations in string format
+    if (processedText.includes('❌ No Helmet') || processedText.includes('❌ No Mask')) {
+        category = 'violation';
+    } else if (processedText.includes('Person(s) detected')) {
+        category = 'detection';
+    }
+    
+    return {
+        timestamp: timestamp,
+        text: processedText,
+        category: category,
+        id: Date.now() + Math.random()
+    };
+}
+
+function fetchLog() {
+    fetch("/detection_log")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Received logs:", data); // Debugging line
+            
+            const logBox = document.getElementById('logBox');
+            if (!data.logs || data.logs.length === 0) {
+                logBox.innerHTML = "<div class='empty-state'>No detections yet...</div>";
+                return;
+            }
+
+            // Clear existing logs
+            logBox.innerHTML = '';
+            
+            // Add new logs (already reversed from server)
+            data.logs.forEach(log => {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${log.category}`;
+                entry.innerHTML = `
+                    <span class="timestamp">${log.timestamp}</span> - 
+                    <span>${log.message}</span>
+                `;
+                logBox.appendChild(entry);
+            });
+            
+            // Update statistics
+            updateStatistics(data.logs);
+        })
+        .catch(error => {
+            console.error('Error fetching logs:', error);
+            document.getElementById('logBox').innerHTML = `
+                <div class="empty-state" style="color: red;">
+                    Error loading logs. Check console for details.
+                </div>
+            `;
+        });
+}
+
+function updateStatistics(logs) {
+    document.getElementById('totalDetections').textContent = logs.length;
+    
+    const violationCount = logs.filter(log => log.category === 'violation').length;
+    document.getElementById('violationCount').textContent = violationCount;
+    
+    const peopleCount = logs.reduce((count, log) => {
+        const match = log.message.match(/👷 (\d+) Person\(s\) detected/);
+        return count + (match ? parseInt(match[1]) : 0);
+    }, 0);
+    document.getElementById('personCount').textContent = peopleCount;
+}
+function displayLogs() {
+    if (logEntries.length === 0) {
+        logBox.innerHTML = "<div class='empty-state'>No detections yet...</div>";
+        return;
+    }
+    
+    logBox.innerHTML = logEntries
+        .map(entry => `
+            <div class="log-entry ${entry.category}">
+                <span class="timestamp">${entry.timestamp}</span> - 
+                <span class="${entry.category === 'violation' ? 'violation-text' : entry.category === 'detection' ? 'person-count' : ''}">${entry.text}</span>
+            </div>
+        `)
+        .join('');
+    
+    // Auto-scroll to top to show latest entries
+    logBox.scrollTop = 0;
+}
+
+function clearLogs() {
+    logEntries = [];
+    displayLogs();
+}
+
+function exportLogs() {
+    // Show loading state
+    const exportBtn = document.querySelector('button[onclick="exportLogs()"]');
+    const originalText = exportBtn.innerHTML;
+    exportBtn.innerHTML = '⏳ Preparing export...';
+    exportBtn.disabled = true;
+
+    // Create iframe for download (works better with special chars)
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = '/export_logs?' + new Date().getTime();
+    
+    iframe.onload = function() {
+        exportBtn.innerHTML = originalText;
+        exportBtn.disabled = false;
+        document.body.removeChild(iframe);
+    };
+    
+    document.body.appendChild(iframe);
+    
+    // Fallback timeout
+    setTimeout(() => {
+        exportBtn.innerHTML = originalText;
+        exportBtn.disabled = false;
+    }, 5000);
+}
+
+// Initialize button states
+window.addEventListener('load', function() {
+    startBtn.disabled = false;
+    stopBtn.disabled = false;
+});
+
+// Test connection periodically when not running
+setInterval(() => {
+    if (!isRunning) {
+        fetchLog();
+    }
+}, 5000);
+</script>
+</body>
+</html>
