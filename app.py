@@ -9,6 +9,7 @@ from detect_video import (
     stop_live,
     DETECTION_LOG
 )
+from waitress import serve  # ✅ Import waitress for production server
 
 app = Flask(__name__)
 
@@ -136,4 +137,5 @@ def export_logs():
     return response
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    print("🚀 Starting app with Waitress on http://localhost:8000")
+    serve(app, host='0.0.0.0', port=8000)
