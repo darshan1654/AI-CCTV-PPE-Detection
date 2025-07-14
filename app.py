@@ -17,13 +17,24 @@ app = Flask(__name__)
 def index():
     return render_template("index.html")
 
-@app.route("/start", methods=["POST"])
-def start():
-    start_live()
-    return jsonify({"status": "started"})
+@app.route('/start', methods=['POST'])
+def start_detection():
+    data = request.get_json(silent=True)
+    ip_url = data.get('ip') if data else None
+
+    if ip_url:
+        print(f"🔗 Starting with IP stream: {ip_url}")
+        start_live(ip_url)
+    else:
+        print("🎥 Starting with default webcam")
+        start_live()  # No argument = default webcam
+
+    return jsonify({'status': 'started'})
+
+
 
 @app.route("/stop", methods=["POST"])
-def stop():
+def stop_detection():
     stop_live()
     return jsonify({"status": "stopped"})
 
