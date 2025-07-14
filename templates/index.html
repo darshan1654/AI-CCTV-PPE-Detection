@@ -268,8 +268,6 @@
             <div class="card">
                 <h3>📷 Live Camera Feed</h3>
                 <div class="controls">
-                <input type="text" id="ipCameraURL" placeholder="Enter IP Camera URL (optional)"
-                 style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc;" />
                     <button id="startBtn" onclick="startFeed()">▶️ Start Detection</button>
                     <button id="stopBtn" onclick="stopFeed()">⏹️ Stop Detection</button>
                 </div>
@@ -382,15 +380,7 @@ function startFeed() {
     status.innerText = "🔄 Starting detection...";
     status.className = "status-transition"; // Yellow for transition state
     
-    const ipURL = document.getElementById("ipCameraURL").value.trim();
-const payload = ipURL ? { ip: ipURL } : {};
-
-fetch("/start", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-})
-
+    fetch("/start", { method: "POST" })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to start detection');
