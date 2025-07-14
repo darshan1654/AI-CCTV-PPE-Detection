@@ -82,10 +82,12 @@ def detection_worker():
         time.sleep(1)
 
 def generate_live_feed():
+    """Generates video frames for streaming"""
     global LIVE_FEED_ACTIVE, camera_released, cap
     
-    if cap is None or not cap.isOpened():
-        print("❌ Cannot open video stream")
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("❌ Cannot open webcam")
         return
 
     camera_released = False
@@ -96,11 +98,11 @@ def generate_live_feed():
             break
 
         try:
-            # Run YOLOv8 detection
-            results = model(frame, verbose=False)[0]
+            # Suppress verbose output from YOLO model for the live feed as well
+            results = model(frame, verbose=False)[0] 
             annotated = results.plot()
 
-            # Encode for web stream
+            # Stream frame
             ret, buffer = cv2.imencode('.jpg', annotated)
             frame_bytes = buffer.tobytes()
 
@@ -115,30 +117,17 @@ def generate_live_feed():
     camera_released = True
     print("🛑 Camera feed closed.")
 
-
-def start_live(ip_url=None):
-    global LIVE_FEED_ACTIVE, detection_thread, cap, DETECTION_LOG
-
-    if cap and cap.isOpened():
-        cap.release()
-
-    if ip_url:
-        cap = cv2.VideoCapture(ip_url)
-    else:
-        cap = cv2.VideoCapture(0)
-
-    if not cap.isOpened():
-        print("❌ Could not open video source")
-        return
-
-    LIVE_FEED_ACTIVE = True
-    DETECTION_LOG = []  # Reset log
-
-    detection_thread = threading.Thread(target=detection_worker, daemon=True)
-    detection_thread.start()
-
-    print("🚀 Live detection started")
-
+def start_live():
+    global LIVE_FEED_ACTIVE, detection_thread, DETECTION_LOG
+    if not LIVE_FEED_ACTIVE:
+        LIVE_FEED_ACTIVE = True
+        DETECTION_LOG = []  # Reset log when starting
+        
+        # Start detection thread
+        detection_thread = threading.Thread(target=detection_worker, daemon=True)
+        detection_thread.start()
+        
+        print("🚀 Live detection started")
 
 def stop_live():
     global LIVE_FEED_ACTIVE, detection_thread
