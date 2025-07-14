@@ -25,7 +25,7 @@
 
 ### 1. Clone the Repository  
 ```bash
-git clone https://github.com/yourusername/ai-ppe-detection.git
+git clone https://github.com/darshan1654/AI-CCTV-PPE-Detection.git
 cd ai-ppe-detection
 ```
 
