@@ -1,4 +1,5 @@
 flask
-opencv-python
+numpy
 ultralytics
-waitress
+gradio
+opencv-python-headless
